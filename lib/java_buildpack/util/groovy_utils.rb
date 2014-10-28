@@ -64,12 +64,14 @@ module JavaBuildpack
         # @param [JavaBuildpack::Component::Application] application the application to search
         # @return [Array] a possibly empty list of files
         def groovy_files(application)
-          (application.root + GROOVY_FILE_PATTERN).glob.reject { |path| path.directory? }.sort
+          (application.root + GROOVY_FILE_PATTERN).glob.reject(&:directory?).sort
         end
 
         private
 
         GROOVY_FILE_PATTERN = '**/*.groovy'.freeze
+
+        private_constant :GROOVY_FILE_PATTERN
 
         def safe_read(file)
           yield

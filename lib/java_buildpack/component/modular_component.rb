@@ -35,23 +35,23 @@ module JavaBuildpack
       # @param [Hash] context a collection of utilities used by components
       # @param [Block, nil] version_validator an optional version validation block
       def initialize(context, &version_validator)
-        super(context)
+        super(context, &version_validator)
         @sub_components = supports? ? sub_components(context) : []
       end
 
       # (see JavaBuildpack::Component::BaseComponent#detect)
       def detect
-        supports? ? @sub_components.map { |m| m.detect }.flatten.compact : nil
+        supports? ? @sub_components.map(&:detect).flatten.compact : nil
       end
 
       # (see JavaBuildpack::Component::BaseComponent#compile)
       def compile
-        @sub_components.each { |m| m.compile }
+        @sub_components.each(&:compile)
       end
 
       # (see JavaBuildpack::Component::BaseComponent#release)
       def release
-        @sub_components.map { |m| m.release }
+        @sub_components.map(&:release)
         command
       end
 
@@ -70,7 +70,7 @@ module JavaBuildpack
       # @param [Hash] context the context of the component
       # @return [Array<BaseComponent>] a collection of +BaseComponent+s that make up the sub_components of this
       #                                component
-      def sub_components(context)
+      def sub_components(_context)
         fail "Method 'sub_components' must be defined"
       end
 

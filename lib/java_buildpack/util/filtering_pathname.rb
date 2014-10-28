@@ -130,7 +130,7 @@ module JavaBuildpack
       end
 
       # Execute this +FilteringPathname+ as a glob.
-      def glob(flags = 0, &block)
+      def glob(flags = 0)
         if block_given?
           Pathname.glob(@pathname, flags) do |file|
             yield filtered_pathname(file) if visible file
@@ -141,13 +141,15 @@ module JavaBuildpack
         end
       end
 
-      protected
-
       attr_reader :pathname
+
+      protected :pathname
 
       private
 
       MUTATORS = [:chmod, :chown, :delete, :lchmod, :lchown, :make_link, :make_symlink, :mkdir, :mkpath, :rename, :rmdir, :rmtree, :taint, :unlink, :untaint].to_set.freeze
+
+      private_constant :MUTATORS
 
       def check_file_does_not_exist(file)
         fail "#{file} should not exist" if file.exist?

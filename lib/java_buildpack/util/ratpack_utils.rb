@@ -16,29 +16,16 @@
 
 require 'pathname'
 require 'java_buildpack/util'
+require 'java_buildpack/util/jar_finder'
 
 module JavaBuildpack
   module Util
 
     # Utilities for dealing with Ratpack applications
-    class RatpackUtils
+    class RatpackUtils < JarFinder
 
-      private_class_method :new
-
-      class << self
-
-        # Indicates whether a application is a Ratpack application
-        #
-        # @param [Application] application the application to search
-        # @return [Boolean] +true+ if the application is a Ratpack application, +false+ otherwise
-        def is?(application)
-          (application.root + RATPACK_FILE_PATTERN).glob.any?
-        end
-
-        private
-
-        RATPACK_FILE_PATTERN = '**/app/{R,r}atpack.groovy'.freeze
-
+      def initialize
+        super(/.*ratpack-core-(.*)\.jar/)
       end
 
     end

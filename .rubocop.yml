@@ -1,11 +1,13 @@
 ---
 AllCops:
-  Excludes:
-    - vendor/**
+  Include:
+    - Rakefile
+    - rakelib/**/*
+  Exclude:
+    - build/**/*
+    - vendor/**/*
 ClassLength:
   Max: 200
-ClassVars:
-  Enabled: false
 CyclomaticComplexity:
   Max: 10
 Documentation:
@@ -18,3 +20,5 @@ MethodLength:
   Max: 25
 ParameterLists:
   Max: 6
+PerceivedComplexity:
+  Max: 10

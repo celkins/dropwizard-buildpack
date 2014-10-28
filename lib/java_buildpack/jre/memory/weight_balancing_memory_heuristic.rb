@@ -36,7 +36,7 @@ module JavaBuildpack
       # @param [Array<String>] valid_types the valid types of memory
       # @param [Hash<String, String>] java_opts a mapping from a memory type to a +JAVA_OPTS+ option
       def initialize(sizes, heuristics, valid_types, java_opts)
-        @logger = JavaBuildpack::Logging::LoggerFactory.get_logger WeightBalancingMemoryHeuristic
+        @logger = JavaBuildpack::Logging::LoggerFactory.instance.get_logger WeightBalancingMemoryHeuristic
         validate 'size', valid_types, sizes.keys
         validate 'heuristic', valid_types, heuristics.keys
         @memory_limit = MemoryLimit.memory_limit
@@ -62,11 +62,13 @@ module JavaBuildpack
 
       private
 
-      NATIVE_MEMORY_WARNING_FACTOR = 3
+      NATIVE_MEMORY_WARNING_FACTOR = 3.freeze
 
-      TOTAL_MEMORY_WARNING_FACTOR = 0.8
+      TOTAL_MEMORY_WARNING_FACTOR = 0.8.freeze
 
-      CLOSE_TO_DEFAULT_FACTOR = 0.1
+      CLOSE_TO_DEFAULT_FACTOR = 0.1.freeze
+
+      private_constant :NATIVE_MEMORY_WARNING_FACTOR, :TOTAL_MEMORY_WARNING_FACTOR, :CLOSE_TO_DEFAULT_FACTOR
 
       def allocate_lower_bounds(buckets)
         buckets.each_value do |bucket|
@@ -98,18 +100,18 @@ module JavaBuildpack
         issue_memory_wastage_warning(buckets)
         issue_close_to_default_warnings(buckets)
 
-        if stack_bucket
-          # Convert stack size from total stack memory to stack size
-          stack_bucket.size = buckets['stack'].size / num_threads
-          buckets['stack']  = stack_bucket
-        end
+        return unless stack_bucket
+
+        # Convert stack size from total stack memory to stack size
+        stack_bucket.size = buckets['stack'].size / num_threads
+        buckets['stack']  = stack_bucket
       end
 
       def normalise_stack_bucket(stack_bucket, buckets)
         stack_memory      = weighted_proportion(stack_bucket, buckets)
         num_threads       = [stack_memory / stack_bucket.default_size, 1].max
         normalised_bucket = MemoryBucket.new('normalised stack', stack_bucket.weighting, stack_bucket.range * num_threads)
-        return normalised_bucket, num_threads # rubocop:disable RedundantReturn
+        [normalised_bucket, num_threads]
       end
 
       def balance_buckets(buckets)
@@ -138,7 +140,7 @@ module JavaBuildpack
         end
         remaining_memory -= allocated_memory
         fail "Total memory #{@memory_limit} exceeded by configured memory #{@sizes}" if remaining_memory < 0
-        return remaining_memory, deleted # rubocop:disable RedundantReturn
+        [remaining_memory, deleted]
       end
 
       def constrain_bucket_size(allocated_memory, bucket, size)
@@ -184,9 +186,9 @@ module JavaBuildpack
 
         total_size = MemorySize::ZERO
         buckets.each_value { |bucket| total_size += bucket.size }
-        if @memory_limit * TOTAL_MEMORY_WARNING_FACTOR > total_size
-          @logger.warn { "The allocated Java memory sizes total #{total_size} which is less than #{TOTAL_MEMORY_WARNING_FACTOR} of the available memory, so configured Java memory sizes may be too small or available memory may be too large" }
-        end
+        return unless @memory_limit * TOTAL_MEMORY_WARNING_FACTOR > total_size
+
+        @logger.warn { "The allocated Java memory sizes total #{total_size} which is less than #{TOTAL_MEMORY_WARNING_FACTOR} of the available memory, so configured Java memory sizes may be too small or available memory may be too large" }
       end
 
       def nil_safe_range(size)
@@ -207,17 +209,18 @@ module JavaBuildpack
       end
 
       def check_close_to_default(type, bucket, total_weighting)
-        if bucket.range.degenerate?
-          default_size = apply_weighting_to_memory_limit(bucket, total_weighting)
-          actual_size  = bucket.size
-          if default_size > 0
-            factor = ((actual_size - default_size) / default_size).abs
-            @logger.debug { "factor for memory size #{type} is #{factor}" }
-          end
-          if (default_size == 0 && actual_size == 0) || (factor && (factor < CLOSE_TO_DEFAULT_FACTOR))
-            @logger.warn { "The computed value #{actual_size} of memory size #{type} is close to the default value #{default_size}. Consider taking the default." }
-          end
+        return unless bucket.range.degenerate?
+
+        default_size = apply_weighting_to_memory_limit(bucket, total_weighting)
+        actual_size  = bucket.size
+        if default_size > 0
+          factor = ((actual_size - default_size) / default_size).abs
+          @logger.debug { "factor for memory size #{type} is #{factor}" }
         end
+
+        return unless (default_size == 0 && actual_size == 0) || (factor && (factor < CLOSE_TO_DEFAULT_FACTOR))
+
+        @logger.warn { "The computed value #{actual_size} of memory size #{type} is close to the default value #{default_size}. Consider taking the default." }
       end
 
       def switches(buckets)

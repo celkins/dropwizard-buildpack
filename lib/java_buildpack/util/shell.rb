@@ -20,7 +20,7 @@ require 'open3'
 module JavaBuildpack
   module Util
 
-# A mixin that provides a +shell()+ command
+    # A mixin that provides a +shell()+ command
     module Shell
 
       # A +system()+-like command that ensure that the execution fails if the command returns a non-zero exit code
@@ -28,7 +28,7 @@ module JavaBuildpack
       # @param [String] command the command to run
       # @return [Void]
       def shell(command)
-        Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
+        Open3.popen3(command) do |_stdin, stdout, stderr, wait_thr|
           if wait_thr.value != 0
             puts "\nCommand '#{command}' has failed"
             puts "STDOUT: #{stdout.gets}"

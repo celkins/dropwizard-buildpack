@@ -30,5 +30,6 @@ end.compact
 if components.empty?
   abort
 else
-  puts components.join(' ')
+  str = components.join(' ')
+  puts str.length > 255 ? str.slice(0..251) + '...' : str
 end

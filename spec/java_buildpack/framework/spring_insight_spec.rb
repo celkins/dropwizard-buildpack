@@ -17,10 +17,12 @@
 require 'spec_helper'
 require 'component_helper'
 require 'fileutils'
+require 'internet_availability_helper'
 require 'java_buildpack/framework/spring_insight'
 
 describe JavaBuildpack::Framework::SpringInsight do
   include_context 'component_helper'
+  include_context 'internet_availability_helper'
 
   it 'should not detect without spring-insight-n/a service' do
     expect(component.detect).to be_nil
@@ -33,7 +35,7 @@ describe JavaBuildpack::Framework::SpringInsight do
       allow(services).to receive(:find_service).and_return('label'       => 'insight-1.0',
                                                            'credentials' => { 'dashboard_url' => 'test-uri', 'agent_password' => 'foo', 'agent_username' => 'bar' })
       allow(application_cache).to receive(:get).with('test-uri/services/config/agent-download')
-                                  .and_yield(Pathname.new('spec/fixtures/stub-insight-agent.jar').open)
+                                  .and_yield(Pathname.new('spec/fixtures/stub-insight-agent.jar').open, false)
     end
 
     it 'should detect with spring-insight-n/a service' do
@@ -43,12 +45,19 @@ describe JavaBuildpack::Framework::SpringInsight do
     it 'should extract Spring Insight from the Uber Agent zip file inside the Agent Installer jar' do
       component.compile
 
-      container_libs_dir     = app_dir + '.spring-insight/container-libs'
+      container_libs_dir = app_dir + '.spring-insight/container-libs'
 
       expect(sandbox + 'weaver/insight-weaver-cf-2.0.0-CI-SNAPSHOT.jar').to exist
       expect(container_libs_dir + 'insight-bootstrap-generic-2.0.0-CI-SNAPSHOT.jar').to exist
       expect(container_libs_dir + 'insight-bootstrap-tomcat-common-2.0.0-CI-SNAPSHOT.jar').to exist
       expect(sandbox + 'insight/conf/insight.properties').to exist
+    end
+
+    it 'should guarantee that internet access is available when downloading' do
+      expect_any_instance_of(JavaBuildpack::Util::Cache::InternetAvailability)
+      .to receive(:available).with(true, 'The Spring Insight download location is always accessible')
+
+      component.compile
     end
 
     it 'should update JAVA_OPTS',

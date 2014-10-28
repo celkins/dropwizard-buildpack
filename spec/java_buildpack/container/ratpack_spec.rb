@@ -39,29 +39,37 @@ describe JavaBuildpack::Container::Ratpack do
     expect(component.detect).to be_nil
   end
 
-  it 'should link classpath JARs',
+  it 'should not detect a Spring Boot application',
+     app_fixture: 'container_spring_boot_dist' do
+
+    expect(component.detect).to be_nil
+  end
+
+  it 'should not detect a distZip application',
+     app_fixture: 'container_dist_zip' do
+
+    expect(component.detect).to be_nil
+  end
+
+  it 'should not detect a Play application',
+     app_fixture: 'container_play_2.2_dist' do
+
+    expect(component.detect).to be_nil
+  end
+
+  it 'should correctly extend the classpath',
      app_fixture: 'container_ratpack_staged' do
 
     component.compile
 
-    lib = app_dir + 'lib'
-
-    jar_1 = lib + 'test-jar-1.jar'
-    expect(jar_1).to exist
-    expect(jar_1).to be_symlink
-    expect(jar_1.readlink).to eq((additional_libs_directory + 'test-jar-1.jar').relative_path_from(lib))
-
-    jar_2 = lib + 'test-jar-2.jar'
-    expect(jar_2).to exist
-    expect(jar_2).to be_symlink
-    expect(jar_2.readlink).to eq((additional_libs_directory + 'test-jar-2.jar').relative_path_from(lib))
+    expect((app_dir + 'bin/application').read)
+    .to match 'CLASSPATH=\$APP_HOME/.additional_libs/test-jar-1.jar:\$APP_HOME/.additional_libs/test-jar-2.jar:'
   end
 
   it 'should return command',
      app_fixture: 'container_ratpack_staged' do
 
-    expect(component.release).to eq("#{java_home.as_env_var} JAVA_OPTS=\"-Dratpack.port=$PORT test-opt-1 test-opt-2\" " \
-                                      '$PWD/bin/application')
+    expect(component.release).to eq("#{java_home.as_env_var} JAVA_OPTS=\"test-opt-2 test-opt-1\" $PWD/bin/application")
   end
 
 end

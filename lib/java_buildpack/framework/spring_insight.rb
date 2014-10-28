@@ -15,7 +15,9 @@
 # limitations under the License.
 
 require 'java_buildpack/component/base_component'
+require 'java_buildpack/util/cache/internet_availability'
 require 'java_buildpack/framework'
+require 'java_buildpack/util/dash_case'
 require 'tmpdir'
 require 'fileutils'
 require 'uri'
@@ -41,7 +43,9 @@ module JavaBuildpack
 
       # (see JavaBuildpack::Component::BaseComponent#compile)
       def compile
-        download(@version, @uri.chomp('/') + AGENT_DOWNLOAD_URI_SUFFIX) { |file| expand file } # TODO: AGENT_DOWNLOAD_URI_SUFFIX To be removed once the full path is included in VCAP_SERVICES see issue 58873498
+        JavaBuildpack::Util::Cache::InternetAvailability.instance.available(true, 'The Spring Insight download location is always accessible') do
+          download(@version, @uri.chomp('/') + AGENT_DOWNLOAD_URI_SUFFIX) { |file| expand file } # TODO: AGENT_DOWNLOAD_URI_SUFFIX To be removed once the full path is included in VCAP_SERVICES see issue 58873498
+        end
       end
 
       # (see JavaBuildpack::Component::BaseComponent#release)
@@ -72,6 +76,8 @@ module JavaBuildpack
       AGENT_DOWNLOAD_URI_SUFFIX = '/services/config/agent-download'.freeze # TODO: To be removed once the full path is included in VCAP_SERVICES see issue 58873498
 
       FILTER = /insight/.freeze
+
+      private_constant :AGENT_DOWNLOAD_URI_SUFFIX, :FILTER
 
       def add_agent_configuration
         @droplet.java_opts
@@ -156,7 +162,7 @@ module JavaBuildpack
         uri         = credentials['dashboard_url']
         id          = credentials['agent_username']
         pass        = credentials['agent_password']
-        return version, uri, id, pass # rubocop:disable RedundantReturn
+        [version, uri, id, pass]
       end
 
       def insight_directory

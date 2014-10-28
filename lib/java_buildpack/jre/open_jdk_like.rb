@@ -40,6 +40,7 @@ module JavaBuildpack
       # (see JavaBuildpack::Component::BaseComponent#detect)
       def detect
         @version, @uri = JavaBuildpack::Repository::ConfiguredItem.find_item(@component_name, @configuration)
+        @droplet.java_home.version = @version
         super
       end
 
@@ -62,6 +63,8 @@ module JavaBuildpack
       KEY_MEMORY_HEURISTICS = 'memory_heuristics'.freeze
 
       KEY_MEMORY_SIZES = 'memory_sizes'.freeze
+
+      private_constant :KEY_MEMORY_HEURISTICS, :KEY_MEMORY_SIZES
 
       def killjava
         @droplet.sandbox + 'bin/killjava.sh'

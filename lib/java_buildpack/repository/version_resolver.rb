@@ -35,8 +35,7 @@ module JavaBuildpack
         # @param [TokenizedVersion] candidate_version the version, possibly containing a wildcard, to resolve.  If +nil+,
         #                                        substituted with +.
         # @param [Array<String>] versions the collection of versions to resolve against
-        # @return [TokenizedVersion] the resolved version
-        # @raise if no version can be resolved
+        # @return [TokenizedVersion] the resolved version or nil if no matching version is found
         def resolve(candidate_version, versions)
           tokenized_candidate_version = safe_candidate_version candidate_version
           tokenized_versions          = versions.map { |version| JavaBuildpack::Util::TokenizedVersion.new(version, false) }
@@ -45,13 +44,14 @@ module JavaBuildpack
           .select { |tokenized_version| matches? tokenized_candidate_version, tokenized_version }
           .max { |a, b| a <=> b }
 
-          fail "No version resolvable for '#{candidate_version}' in #{versions.join(', ')}" if version.nil?
           version
         end
 
         private
 
-        TOKENIZED_WILDCARD = JavaBuildpack::Util::TokenizedVersion.new('+')
+        TOKENIZED_WILDCARD = JavaBuildpack::Util::TokenizedVersion.new('+').freeze
+
+        private_constant :TOKENIZED_WILDCARD
 
         def safe_candidate_version(candidate_version)
           if candidate_version.nil?

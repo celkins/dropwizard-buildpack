@@ -10,7 +10,7 @@ The `java-buildpack` is a [Cloud Foundry][] buildpack for running JVM-based appl
 To use this buildpack specify the URI of the repository when pushing an application to Cloud Foundry:
 
 ```bash
-cf push -b https://github.com/cloudfoundry/java-buildpack
+cf push <APP-NAME> -p <ARTIFACT> -b https://github.com/cloudfoundry/java-buildpack.git
 ```
 
 ## Examples
@@ -32,10 +32,12 @@ To learn how to configure various properties of the buildpack, follow the "Confi
 * [Design](docs/design.md)
 * [Security](docs/security.md)
 * Standard Containers
+	* [Dist ZIP](docs/container-dist_zip.md)
 	* [Groovy](docs/container-groovy.md) ([Configuration](docs/container-groovy.md#configuration))
 	* [Java Main](docs/container-java_main.md) ([Configuration](docs/container-java_main.md#configuration))
 	* [Play Framework](docs/container-play_framework.md)
 	* [Ratpack](docs/container-ratpack.md)
+	* [Spring Boot](docs/container-spring_boot.md)
 	* [Spring Boot CLI](docs/container-spring_boot_cli.md) ([Configuration](docs/container-spring_boot_cli.md#configuration))
 	* [Tomcat](docs/container-tomcat.md) ([Configuration](docs/container-tomcat.md#configuration))
 * Standard Frameworks
@@ -60,11 +62,46 @@ To learn how to configure various properties of the buildpack, follow the "Confi
 	* [Caches](docs/extending-caches.md) ([Configuration](docs/extending-caches.md#configuration))
 	* [Logging](docs/extending-logging.md) ([Configuration](docs/extending-logging.md#configuration))
 	* [Repositories](docs/extending-repositories.md) ([Configuration](docs/extending-repositories.md#configuration))
-	* [Utiltities](docs/extending-utiltities.md)
+	* [Utilities](docs/extending-utiltities.md)
+* [Debugging the Buildpack](docs/debugging-the-buildpack.md)
+* [Buildpack Modes](docs/buildpack-modes.md)
 * Related Projects
 	* [Java Buildpack Dependency Builder](https://github.com/cloudfoundry/java-buildpack-dependency-builder)
 	* [Java Test Applications](https://github.com/cloudfoundry/java-test-applications)
 	* [Java Buildpack System Tests](https://github.com/cloudfoundry/java-buildpack-system-test)
+
+## Building Packages
+The buildpack can be packaged up so that it can uploaded to Cloud Foundry using the `cf create-buildpack` and `cf update-buildpack` commands.  In order to create these packages, the rake `package` task is used.
+
+### Online Package
+The online package is a version of the buildpack that is as minimal as possible and is configured to connect to the network for all dependencies.  This package is about 50K in size.  To create the online package, run:
+
+```bash
+bundle install
+bundle exec rake package
+...
+Creating build/java-buildpack-cfd6b17.zip
+```
+
+### Offline Package
+The offline package is a version of the buildpack designed to run without access to a network.  It packages the latest version of each dependency (as configured in the [`config/` directory][]) and [disables `remote_downloads`][]. This package is about 180M in size.  To create the offline package, use the `OFFLINE=true` argument:
+
+```bash
+bundle install
+bundle exec rake package OFFLINE=true
+...
+Creating build/java-buildpack-offline-cfd6b17.zip
+```
+
+### Package Versioning
+Keeping track of different versions of the buildpack can be difficult.  To help with this, the rake `package` task puts a version discriminator in the name of the created package file.  The default value for this discriminator is the current Git hash (e.g. `cfd6b17`).  To change the version when creating a package, use the `VERSION=<VERSION>` argument:
+
+```bash
+bundle install
+bundle exec rake package VERSION=2.1
+...
+Creating build/java-buildpack-2.1.zip
+```
 
 ## Running Tests
 To run the tests, do the following:
@@ -82,9 +119,11 @@ bundle exec rake
 ## License
 This buildpack is released under version 2.0 of the [Apache License][].
 
+[`config/` directory]: config
 [Apache License]: http://www.apache.org/licenses/LICENSE-2.0
 [Cloud Foundry]: http://www.cloudfoundry.com
 [contributor guidelines]: CONTRIBUTING.md
+[disables `remote_downloads`]: docs/extending-caches.md#configuration
 [GitHub's forking functionality]: https://help.github.com/articles/fork-a-repo
 [Grails]: http://grails.org
 [Groovy]: http://groovy.codehaus.org

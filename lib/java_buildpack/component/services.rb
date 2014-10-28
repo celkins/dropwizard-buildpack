@@ -33,8 +33,8 @@ module JavaBuildpack
       # +filter+ matches exactly one service, +false+ otherwise.
       #
       # @param [Regexp, String] filter a +RegExp+ or +String+ to match against the name, label, and tags of the services
-      # @param [String] required_credentials an optional list of keys that must exist in the credentials payload of
-      #                                             the candidate service
+      # @param [String] required_credentials an optional list of keys or groups of keys, where at least one key from the
+      #                                      group, must exist in the credentials payload of the candidate service
       # @return [Boolean] +true+ if the +filter+ matches exactly one service with the required credentials, +false+
       #                   otherwise.
       def one_service?(filter, *required_credentials)
@@ -45,7 +45,7 @@ module JavaBuildpack
           if credentials?(candidates.first['credentials'], required_credentials)
             match = true
           else
-            logger = JavaBuildpack::Logging::LoggerFactory.get_logger Services
+            logger = JavaBuildpack::Logging::LoggerFactory.instance.get_logger Services
             logger.warn do
               "A service with a name label or tag matching #{filter} was found, but was missing one of the required" \
             " credentials #{required_credentials}"
@@ -68,11 +68,13 @@ module JavaBuildpack
       private
 
       def credentials?(candidate, required_keys)
-        required_keys.all? { |k| candidate.key? k }
+        required_keys.all? do |k|
+          k.is_a?(Array) ? k.any? { |g| candidate.key?(g) } : candidate.key?(k)
+        end
       end
 
       def matcher(filter)
-        filter = Regexp.new(filter) unless filter.kind_of?(Regexp)
+        filter = Regexp.new(filter) unless filter.is_a?(Regexp)
 
         lambda do |service|
           service['name'] =~ filter || service['label'] =~ filter || service['tags'].any? { |tag| tag =~ filter }

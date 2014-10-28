@@ -43,9 +43,9 @@ module JavaBuildpack
           java_opts = @droplet.java_opts
 
           java_opts.each do |option|
-            if option.shellsplit.length > 1 && !bash_expression?(option)
-              fail "Invalid Java option contains more than one option: '#{option}'"
-            end
+            next unless option.shellsplit.length > 1 && !bash_expression?(option)
+
+            fail "Invalid Java option contains more than one option: '#{option}'"
           end
 
           java_opts.map { |java_opt| "-J#{java_opt}" }
@@ -60,8 +60,6 @@ module JavaBuildpack
         def start_script
           JavaBuildpack::Util.start_script root
         end
-
-        protected
 
         # Returns the root of the play application
         #

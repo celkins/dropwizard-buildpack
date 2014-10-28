@@ -16,10 +16,12 @@
 # Configuration for components to use in the buildpack
 ---
 containers:
+  - "JavaBuildpack::Container::DistZip"
   - "JavaBuildpack::Container::Groovy"
   - "JavaBuildpack::Container::JavaMain"
   - "JavaBuildpack::Container::PlayFramework"
   - "JavaBuildpack::Container::Ratpack"
+  - "JavaBuildpack::Container::SpringBoot"
   - "JavaBuildpack::Container::SpringBootCLI"
   - "JavaBuildpack::Container::Tomcat"
 

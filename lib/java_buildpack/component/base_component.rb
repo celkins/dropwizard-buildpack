@@ -82,12 +82,12 @@ module JavaBuildpack
       # @param [String] uri
       # @param [String] name an optional name for the download.  Defaults to +@component_name+.
       # @return [Void]
-      def download(version, uri, name = @component_name, &block)
+      def download(version, uri, name = @component_name)
         download_start_time = Time.now
         print "-----> Downloading #{name} #{version} from #{uri} "
 
-        JavaBuildpack::Util::Cache::ApplicationCache.new.get(uri) do |file| # TODO: Use global cache #50175265
-          puts "(#{(Time.now - download_start_time).duration})"
+        JavaBuildpack::Util::Cache::ApplicationCache.new.get(uri) do |file, downloaded|
+          puts downloaded ? "(#{(Time.now - download_start_time).duration})" : '(found in cache)'
           yield file
         end
       end

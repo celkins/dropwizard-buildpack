@@ -31,7 +31,7 @@ module JavaBuildpack
       # @param [Hash] context a collection of utilities used the component
       def initialize(context)
         super(context)
-        @logger = JavaBuildpack::Logging::LoggerFactory.get_logger SpringAutoReconfiguration
+        @logger = JavaBuildpack::Logging::LoggerFactory.instance.get_logger SpringAutoReconfiguration
       end
 
       # (see JavaBuildpack::Component::BaseComponent#compile)
@@ -51,7 +51,7 @@ module JavaBuildpack
 
       # (see JavaBuildpack::Component::VersionedDependencyComponent#supports?)
       def supports?
-        (@droplet.root + '**/*spring-core*.jar').glob.any?
+        @configuration['enabled'] && (@droplet.root + '**/*spring-core*.jar').glob.any?
       end
 
       private
@@ -59,21 +59,21 @@ module JavaBuildpack
       def modify_web_xml
         web_xml = @droplet.root + 'WEB-INF/web.xml'
 
-        if web_xml.exist?
-          puts '       Modifying /WEB-INF/web.xml for Auto Reconfiguration'
-          @logger.debug { "  Original web.xml: #{web_xml.read}" }
+        return unless web_xml.exist?
 
-          modifier = web_xml.open { |file| WebXmlModifier.new(file) }
-          modifier.augment_root_context
-          modifier.augment_servlet_contexts
+        puts '       Modifying /WEB-INF/web.xml for Auto Reconfiguration'
+        @logger.debug { "  Original web.xml: #{web_xml.read}" }
 
-          web_xml.open('w') do |file|
-            file.write(modifier.to_s)
-            file.fsync
-          end
+        modifier = web_xml.open { |file| WebXmlModifier.new(file) }
+        modifier.augment_root_context
+        modifier.augment_servlet_contexts
 
-          @logger.debug { "  Modified web.xml: #{web_xml.read}" }
+        web_xml.open('w') do |file|
+          file.write(modifier.to_s)
+          file.fsync
         end
+
+        @logger.debug { "  Modified web.xml: #{web_xml.read}" }
       end
 
     end

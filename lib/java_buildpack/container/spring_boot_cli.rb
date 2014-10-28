@@ -34,14 +34,13 @@ module JavaBuildpack
       #
       # @param [Hash] context a collection of utilities used the component
       def initialize(context)
-        @logger = JavaBuildpack::Logging::LoggerFactory.get_logger SpringBootCLI
+        @logger = JavaBuildpack::Logging::LoggerFactory.instance.get_logger SpringBootCLI
         super(context)
       end
 
       # (see JavaBuildpack::Component::BaseComponent#compile)
       def compile
         download_tar
-        @droplet.additional_libraries.link_to lib_dir
       end
 
       # (see JavaBuildpack::Component::BaseComponent#release)
@@ -49,11 +48,11 @@ module JavaBuildpack
         [
           @droplet.java_home.as_env_var,
           @droplet.java_opts.as_env_var,
+          'SERVER_PORT=$PORT',
           qualify_path(@droplet.sandbox + 'bin/spring', @droplet.root),
           'run',
-          relative_groovy_files,
-          '--',
-          '--server.port=$PORT'
+          @droplet.additional_libraries.as_classpath,
+          relative_groovy_files
         ].flatten.compact.join(' ')
       end
 
@@ -66,10 +65,6 @@ module JavaBuildpack
       end
 
       private
-
-      def lib_dir
-        @droplet.sandbox + 'lib'
-      end
 
       def relative_groovy_files
         JavaBuildpack::Util::GroovyUtils.groovy_files(@application).map { |gf| gf.relative_path_from(@application.root) }

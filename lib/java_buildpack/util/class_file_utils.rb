@@ -32,12 +32,12 @@ module JavaBuildpack
         # @param [JavaBuildpack::Component::Application] application the application to search
         # @return [Array<Pathname>] a possibly empty list of files
         def class_files(application)
-          (application.root + CLASS_FILE_PATTERN).glob.reject { |path| path.directory? }.sort
+          (application.root + CLASS_FILE_PATTERN).glob.reject(&:directory?).sort
         end
 
-        private
-
         CLASS_FILE_PATTERN = '**/*.class'.freeze
+
+        private_constant :CLASS_FILE_PATTERN
 
       end
 

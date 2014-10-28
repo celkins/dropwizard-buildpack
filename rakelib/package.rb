@@ -1,6 +1,6 @@
 # Encoding: utf-8
 # Cloud Foundry Java Buildpack
-# Copyright 2013 the original author or authors.
+# Copyright (c) 2014 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,26 +14,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'spec_helper'
-require 'application_helper'
-require 'fileutils'
+require 'java_buildpack/buildpack_version'
 
-shared_context 'buildpack_cache_helper' do
-  include_context 'application_helper'
+module Package
 
-  previous_buildpack_cache = ENV['BUILDPACK_CACHE']
-
-  let(:buildpack_cache_dir) { app_dir }
-
-  let(:java_buildpack_cache_dir) { buildpack_cache_dir + 'java-buildpack' }
-
-  before do
-    FileUtils.mkdir_p java_buildpack_cache_dir
-    ENV['BUILDPACK_CACHE'] = buildpack_cache_dir.to_s
+  def self.offline
+    '-offline' if BUILDPACK_VERSION.offline
   end
 
-  after do
-    ENV['BUILDPACK_CACHE'] = previous_buildpack_cache
+  def self.version
+    BUILDPACK_VERSION.version || 'unknown'
   end
+
+  ARCHITECTURES = %w(x86_64).freeze
+
+  BUILD_DIR = 'build'.freeze
+
+  BUILDPACK_VERSION = JavaBuildpack::BuildpackVersion.new(false).freeze
+
+  PLATFORMS = %w(centos6 lucid mountainlion precise trusty).freeze
+
+  STAGING_DIR = "#{BUILD_DIR}/staging".freeze
+
+  PACKAGE_NAME = "#{BUILD_DIR}/java-buildpack#{offline}-#{version}.zip".freeze
 
 end

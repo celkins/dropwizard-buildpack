@@ -15,7 +15,6 @@
 # limitations under the License.
 
 require 'java_buildpack/component/versioned_dependency_component'
-require 'java_buildpack/container'
 
 module JavaBuildpack
   module Container
