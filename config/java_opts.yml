@@ -15,5 +15,5 @@
 
 # JAVA_OPTS configuration
 ---
-from_environment: false
+from_environment: true
 java_opts: -Ddw.server.type=simple -Ddw.server.applicationContextPath=/ -Ddw.server.connector.type=http -Ddw.server.connector.port=$PORT
